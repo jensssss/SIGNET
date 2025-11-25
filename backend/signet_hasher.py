@@ -18,10 +18,9 @@ def get_image_phash(image_data: bytes) -> str:
     p_hash = imagehash.phash(image, hash_size=16) 
     return str(p_hash)
 
-def get_video_phash(filepath: str, frame_index: int = 10) -> str:
+def get_video_phash(filepath: str) -> str:
     """
-    Menghitung pHash dari keyframe (frame ke-N) pada video.
-    Kita ambil frame ke-10 untuk menghindari frame hitam atau loading awal.
+    Menghitung pHash dari FRAME TENGAH video (lebih stabil terhadap padding/trimming).
     """
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"File video tidak ditemukan: {filepath}")
@@ -30,16 +29,25 @@ def get_video_phash(filepath: str, frame_index: int = 10) -> str:
     if not cap.isOpened():
         raise IOError(f"Gagal membuka file video: {filepath}")
 
-    # Set frame position ke frame_index yang kita tentukan
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+    # 1. Dapatkan Total Jumlah Frame
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    # 2. Hitung Index Frame Tengah (mid-frame)
+    if frame_count < 20: # Jika video terlalu pendek
+        frame_to_hash = 0
+    else:
+        frame_to_hash = frame_count // 2 # Bagi dua (tengah)
+    
+    # Set frame position ke frame tengah
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_to_hash)
     
     ret, frame = cap.read()
-    cap.release() # Tutup file video setelah frame didapat
+    cap.release() 
 
     if not ret or frame is None:
-        raise ValueError(f"Gagal membaca frame ke-{frame_index} dari video.")
+        raise ValueError(f"Gagal membaca frame ke-{frame_to_hash} dari video.")
     
-    # Konversi dari OpenCV (BGR) ke PIL Image (RGB) untuk di-hash
+    # Konversi dan Hash
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     image = Image.fromarray(frame_rgb)
     
