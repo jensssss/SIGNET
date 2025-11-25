@@ -1,0 +1,13 @@
+# Python files to ignore
+__pycache__/
+*.pyc
+
+# Hardhat/Node files to ignore
+/hardhat/artifacts/
+/hardhat/cache/
+/hardhat/node_modules/
+/hardhat/ignition/deployments/
+/hardhat/package-lock.json
+
+# Project-specific/OS files
+.DS_Store
